@@ -1,0 +1,48 @@
+HỆ THỐNG BÁN THUỐC - NHÓM 09: HƯỚNG DẪN CHẠY
+
+1. CÁCH CHẠY (không cần cài thư viện Java nào)
+   - Windows: bấm đúp file run.bat (cùng thư mục với các file .java).
+   - Hoặc dòng lệnh, đứng trong thư mục chứa các file .java:
+       javac -encoding UTF-8 -d out *.java
+       java -cp out PharmacyGUI          (giao diện cửa sổ)
+       java -cp out PharmacySystem       (bản console, dùng đơn mẫu)
+       java -cp out PharmacySystem anh.png   (bản console, quét ảnh đơn thuốc)
+   - Cần JDK 8 trở lên (khuyến nghị JDK 17 hoặc 21).
+
+2. ĐỌC CHỮ TRONG ẢNH ĐƠN THUỐC (OCR) - cài thêm Tesseract một lần
+   - Tải bản cài cho Windows: https://github.com/UB-Mannheim/tesseract/wiki
+   - Khi cài, ở mục "Additional language data" tick chọn "Vietnamese".
+   - Cài xong KHÔNG cần cấu hình gì thêm: chương trình tự tìm tesseract.exe
+     (trong PATH hoặc C:\Program Files\Tesseract-OCR\). Nếu cài ở chỗ khác, đặt biến môi trường
+     TESSERACT_CMD trỏ tới file tesseract.exe.
+   - Chưa cài Tesseract thì vẫn dùng được: bấm "Dùng đơn mẫu", hoặc gõ nội dung đơn vào ô
+     "Văn bản đọc được" rồi bấm "Phân tích văn bản".
+   - Ảnh nên chụp thẳng, đủ sáng, chữ in rõ. Ảnh chữ viết tay bác sĩ thường đọc không chính xác;
+     khi đó sửa lại văn bản ở ô bên trái rồi bấm "Phân tích văn bản".
+
+3. CHỤP BẰNG CAMERA (không cần cài thêm gì)
+   Bấm "Chụp bằng camera": chương trình mở trang chụp ảnh trong trình duyệt (Chrome, Edge...).
+   - Lần đầu, trình duyệt hỏi quyền dùng camera: chọn "Cho phép".
+   - Đặt đơn thuốc vào khung, bấm "Chụp ảnh", xem lại, rồi bấm "Dùng ảnh này".
+   - Ảnh tự hiện trong chương trình; sau đó bấm "Quét đơn (OCR)".
+   - Máy có nhiều camera thì chọn camera ở ô danh sách trên trang.
+   - Nếu trình duyệt không tự mở, copy địa chỉ hiện trong hộp thoại (dạng http://127.0.0.1:xxxxx/...)
+     dán vào Chrome hoặc Edge. Trang chỉ chạy trên chính máy bạn, ảnh không đi đâu ra ngoài.
+   - Không có camera hoặc bị chặn quyền: chụp bằng điện thoại, chép ảnh sang máy rồi bấm
+     "Chọn ảnh...", kéo-thả vào khung ảnh, hoặc copy ảnh rồi bấm "Dán ảnh".
+
+4. KHO THUỐC
+   Dữ liệu kho được lưu trong file kho_thuoc.csv (tự tạo ở lần chạy đầu, cập nhật sau mỗi lần bán
+   hoặc nhập hàng). Xóa file này để quay về kho mẫu ban đầu.
+
+5. TÀI KHOẢN NHẬN TIỀN (mã QR)
+   Sửa 4 dòng khai báo đầu file BankTransferPayment.java (ngân hàng, mã BIN, số tài khoản, tên).
+   Hiện đang là tài khoản Vietcombank do nhóm cung cấp: quét mã QR trong lúc demo sẽ chuyển tiền thật.
+
+6. CẤU TRÚC MÃ NGUỒN (để viết báo cáo)
+   Nghiệp vụ: Medicine, Inventory, Prescription, PrescriptionItem, StockCheckResult, StockStatus,
+              Invoice, InvoiceLine, InventoryStorage
+   Quét đơn:  ScannerService, OcrEngine (interface), TesseractOcr, PrescriptionParser, ScanResult, CameraSession
+   Thanh toán: PaymentService, PaymentStrategy (interface), CashPayment, BankTransferPayment, VietQR, QrCode, QrImage
+   Giao diện: PharmacyGUI, PharmacyPanel, ImagePanel
+   Sơ đồ lớp: xem thư mục docs (uml_1_nghiep_vu.png, uml_2_dich_vu.png).
