@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Kho thuốc')}"></head>
+<body>
+<header th:replace="~{fragments :: header('inventory')}"></header>
+<main>
+  <h2>Kho thuốc</h2>
+  <p class="alert warn" th:if="${msg}" th:text="${msg}"></p>
+  <p class="alert error" th:if="${err}" th:text="${err}"></p>
+
+  <div class="stats">
+    <div class="card stat"><span>Loại thuốc</span><b th:text="${sum.total}"></b></div>
+    <div class="card stat" th:classappend="${sum.low > 0} ? 'warn'"><span>Sắp hết (dưới <span th:text="${lowLimit}"></span>)</span><b th:text="${sum.low}"></b></div>
+    <div class="card stat" th:classappend="${sum.out > 0} ? 'bad'"><span>Hết hàng</span><b th:text="${sum.out}"></b></div>
+    <div class="card stat"><span>Giá trị tồn (theo giá bán)</span><b th:text="${#numbers.formatInteger(sum.value,1,'POINT')} + 'đ'"></b></div>
+  </div>
+
+  <div class="toolbar no-print">
+    <input type="search" class="search" id="q" placeholder="Tìm theo tên, hoạt chất, biệt dược…">
+    <div class="chips" id="chips">
+      <button type="button" class="chip on" data-f="all">Tất cả<b th:text="${sum.total}"></b></button>
+      <button type="button" class="chip" data-f="low">Sắp hết<b th:text="${sum.low}"></b></button>
+      <button type="button" class="chip" data-f="out">Hết hàng<b th:text="${sum.out}"></b></button>
+      <button type="button" class="chip" data-f="ok">Còn hàng<b th:text="${sum.total - sum.low - sum.out}"></b></button>
+    </div>
+    <button type="button" class="btn primary right" id="addBtn">+ Thêm thuốc mới</button>
+  </div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Thuốc</th><th class="r">Giá bán</th><th>Tồn kho</th><th>Biến động <span th:text="${days}"></span> ngày</th><th class="no-print r">Thao tác</th></tr></thead>
+    <tbody>
+      <tr th:each="r : ${rows}" th:attr="data-state=${r.state}">
+        <td><b th:text="${r.medicine.displayName}"></b>
+          <small th:text="${r.medicine.activeIngredient}"></small>
+          <small th:if="${!r.medicine.aliases.isEmpty()}" th:text="'Tên khác: ' + ${r.medicine.aliases}"></small></td>
+        <td class="r" th:text="${#numbers.formatInteger(r.medicine.price,1,'POINT')} + 'đ/' + ${r.medicine.unit}"></td>
+        <td><div class="stock">
+          <b th:class="${r.state == 'out'} ? 'out' : (${r.state == 'low'} ? 'low' : '')"
+             th:text="${r.state == 'out'} ? 'Hết hàng' : ${r.medicine.stockQuantity} + ' ' + ${r.medicine.unit}"></b>
+          <div class="bar"><i th:class="${r.state == 'ok'} ? '' : ${r.state}" th:style="'width:' + ${r.percent} + '%'"></i></div></div></td>
+        <td><div class="mv" th:if="${r.added > 0 or r.removed > 0}">
+            <span class="up" th:if="${r.added > 0}" th:text="'▲ +' + ${r.added}"></span>
+            <span class="down" th:if="${r.removed > 0}" th:text="'▼ −' + ${r.removed}"></span></div>
+          <span class="mv none" th:if="${r.added == 0 and r.removed == 0}">Không đổi</span></td>
+        <td class="no-print"><div class="rowbtns">
+          <button type="button" class="btn inbtn" th:attr="data-id=${r.medicine.id},data-name=${r.medicine.displayName},data-stock=${r.medicine.stockQuantity},data-unit=${r.medicine.unit},data-mode='IN'">＋ Nhập</button>
+          <button type="button" class="btn outbtn" th:attr="data-id=${r.medicine.id},data-name=${r.medicine.displayName},data-stock=${r.medicine.stockQuantity},data-unit=${r.medicine.unit},data-mode='OUT'">－ Giảm</button>
+          <button type="button" class="btn editbtn" th:attr="data-id=${r.medicine.id},data-name=${r.medicine.name},data-active=${r.medicine.activeIngredient},data-dosage=${r.medicine.dosage},data-unit=${r.medicine.unit},data-price=${r.medicine.price},data-aliases=${r.medicine.aliases}">Sửa</button>
+          <a class="btn" th:href="@{/inventory/{id}/history(id=${r.medicine.id})}">Lịch sử</a></div></td>
+      </tr>
+    </tbody>
+  </table></div>
+  <p class="muted" id="empty" hidden>Không có thuốc nào khớp.</p>
+</main>
+
+<!-- Hộp thoại: tăng / giảm / kiểm kê tồn kho -->
+<dialog class="dlg" id="adjDlg">
+  <form method="post" th:action="@{/inventory/0/adjust}" id="adjForm" class="stack">
+    <div><h3 id="adjName">Điều chỉnh tồn kho</h3><p class="muted" id="adjInfo" style="margin:2px 0 0"></p></div>
+    <div class="seg">
+      <label><input type="radio" name="type" value="IN">＋ Nhập thêm</label>
+      <label class="minus"><input type="radio" name="type" value="OUT">－ Xuất giảm</label>
+      <label class="set"><input type="radio" name="type" value="SET">Kiểm kê</label>
+    </div>
+    <label class="f"><span id="qtyLabel">Số lượng</span><input type="number" name="quantity" id="adjQty" min="0" required></label>
+    <label class="f">Lý do<select name="reason" id="adjReason"></select></label>
+    <label class="f">Ghi chú (tuỳ chọn)<input type="text" name="note" maxlength="120" placeholder="vd: số lô, tên nhà cung cấp"></label>
+    <div class="preview" id="adjPreview"></div>
+    <div class="actions" style="margin:0"><button type="button" class="btn" data-close>Hủy</button><button class="btn primary right">Lưu</button></div>
+  </form>
+</dialog>
+
+<!-- Hộp thoại: sửa thông tin và giá -->
+<dialog class="dlg" id="editDlg">
+  <form method="post" th:action="@{/inventory/0/edit}" id="editForm" class="stack">
+    <h3>Sửa thông tin thuốc</h3>
+    <label class="f">Tên thuốc<input type="text" name="name" id="eName" required></label>
+    <div class="grid3">
+      <label class="f">Hàm lượng<input type="text" name="dosage" id="eDosage" placeholder="500mg"></label>
+      <label class="f">Đơn vị<input type="text" name="unit" id="eUnit" required></label>
+      <label class="f">Giá bán (đ)<input type="number" name="price" id="ePrice" min="0" required></label>
+    </div>
+    <label class="f">Hoạt chất<input type="text" name="activeIngredient" id="eActive"></label>
+    <label class="f">Tên gọi khác, biệt dược (cách nhau dấu phẩy)<input type="text" name="aliases" id="eAliases"></label>
+    <p class="muted" style="margin:0;font-size:12px">Tên gọi khác giúp hệ thống nhận ra thuốc khi đọc đơn. Số lượng tồn chỉ đổi bằng nút Nhập / Giảm để có lịch sử.</p>
+    <div class="actions" style="margin:0"><button type="button" class="btn" data-close>Hủy</button><button class="btn primary right">Lưu</button></div>
+  </form>
+</dialog>
+
+<!-- Hộp thoại: thêm thuốc mới -->
+<dialog class="dlg" id="addDlg">
+  <form th:action="@{/inventory/add}" method="post" class="stack">
+    <h3>Thêm thuốc mới</h3>
+    <label class="f">Tên thuốc<input type="text" name="name" required></label>
+    <div class="grid3">
+      <label class="f">Hàm lượng<input type="text" name="dosage" placeholder="500mg"></label>
+      <label class="f">Đơn vị<input type="text" name="unit" value="viên" required></label>
+      <label class="f">Giá bán (đ)<input type="number" name="price" min="0" required></label>
+    </div>
+    <div class="grid3">
+      <label class="f">Hoạt chất<input type="text" name="activeIngredient"></label>
+      <label class="f">Tồn đầu kỳ<input type="number" name="stock" min="0" value="0" required></label>
+    </div>
+    <label class="f">Tên gọi khác (cách nhau dấu phẩy)<input type="text" name="aliases"></label>
+    <div class="actions" style="margin:0"><button type="button" class="btn" data-close>Hủy</button><button class="btn primary right">Thêm</button></div>
+  </form>
+</dialog>
+
+<script>
+  const $ = s => document.querySelector(s), rows = [...document.querySelectorAll('tbody tr')];
+  let filter = 'all';
+  function apply() {
+    const k = $('#q').value.toLowerCase().trim();
+    let shown = 0;
+    rows.forEach(r => {
+      const ok = (filter === 'all' || r.dataset.state === filter) && (!k || r.textContent.toLowerCase().includes(k));
+      r.hidden = !ok; if (ok) shown++;
+    });
+    $('#empty').hidden = shown > 0;
+  }
+  $('#q').addEventListener('input', apply);
+  document.querySelectorAll('#chips .chip').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('#chips .chip').forEach(x => x.classList.remove('on'));
+    c.classList.add('on'); filter = c.dataset.f; apply();
+  }));
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+  document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+  $('#addBtn').addEventListener('click', () => $('#addDlg').showModal());
+
+  // ---- Tăng / giảm / kiểm kê ----
+  const REASONS = {
+    IN:  ['Nhập hàng từ nhà cung cấp', 'Khách trả lại', 'Điều chỉnh sai sót', 'Khác'],
+    OUT: ['Hư hỏng / vỡ', 'Hết hạn sử dụng', 'Thất thoát', 'Trả lại nhà cung cấp', 'Khác'],
+    SET: ['Kiểm kê định kỳ']
+  };
+  const adj = { id: 0, stock: 0, unit: '' };
+  const radios = [...document.querySelectorAll('#adjForm input[name=type]')];
+  const mode = () => radios.find(r => r.checked).value;
+  function refresh() {
+    const m = mode(), q = parseInt($('#adjQty').value || '0', 10), prev = $('#adjPreview');
+    $('#adjReason').innerHTML = REASONS[m].map(t => '<option>' + t + '</option>').join('');
+    $('#qtyLabel').textContent = m === 'SET' ? 'Số lượng thực đếm được' : (m === 'IN' ? 'Số lượng nhập thêm' : 'Số lượng giảm');
+    updatePreview();
+  }
+  function updatePreview() {
+    const m = mode(), q = parseInt($('#adjQty').value || '0', 10), prev = $('#adjPreview');
+    let after = m === 'IN' ? adj.stock + q : (m === 'OUT' ? adj.stock - q : q);
+    prev.classList.toggle('warn', after < 0);
+    prev.textContent = after < 0 ? 'Không đủ hàng: chỉ còn ' + adj.stock + ' ' + adj.unit
+      : 'Tồn kho: ' + adj.stock + ' → ' + after + ' ' + adj.unit + (after !== adj.stock ? (after > adj.stock ? '  (▲ +' : '  (▼ −') + Math.abs(after - adj.stock) + ')' : '');
+  }
+  radios.forEach(r => r.addEventListener('change', refresh));
+  $('#adjQty').addEventListener('input', updatePreview);
+  document.querySelectorAll('.inbtn,.outbtn').forEach(b => b.addEventListener('click', () => {
+    adj.id = b.dataset.id; adj.stock = parseInt(b.dataset.stock, 10); adj.unit = b.dataset.unit;
+    $('#adjForm').action = $('#adjForm').action.replace(/\/inventory\/\d+\/adjust/, '/inventory/' + adj.id + '/adjust');
+    $('#adjName').textContent = b.dataset.name;
+    $('#adjInfo').textContent = 'Đang tồn ' + adj.stock + ' ' + adj.unit;
+    radios.find(r => r.value === b.dataset.mode).checked = true;
+    $('#adjQty').value = ''; refresh();
+    $('#adjDlg').showModal(); $('#adjQty').focus();
+  }));
+
+  // ---- Sửa thông tin ----
+  document.querySelectorAll('.editbtn').forEach(b => b.addEventListener('click', () => {
+    const f = $('#editForm'); f.action = f.action.replace(/\/inventory\/\d+\/edit/, '/inventory/' + b.dataset.id + '/edit');
+    $('#eName').value = b.dataset.name; $('#eDosage').value = b.dataset.dosage; $('#eUnit').value = b.dataset.unit;
+    $('#ePrice').value = b.dataset.price; $('#eActive').value = b.dataset.active; $('#eAliases').value = b.dataset.aliases;
+    $('#editDlg').showModal();
+  }));
+</script>
+</body>
+</html>

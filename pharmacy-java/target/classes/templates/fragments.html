@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${title} + ' - PharmaScan'">PharmaScan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" th:href="@{/css/app.css}">
+  <script defer th:src="@{/js/app.js}"></script>
+</head>
+<body>
+<header th:fragment="header(active)" class="topbar no-print"><div class="in">
+  <a class="brand" th:href="@{/}"><span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></span>
+    <span>PharmaScan<small>Nhà thuốc thông minh</small></span></a>
+  <nav>
+    <!-- Dược sĩ: chỉ bán thuốc -->
+    <a sec:authorize="hasRole('PHARMACIST')" th:href="@{/}" th:classappend="${active == 'pos'} ? 'on'">Bán thuốc</a>
+    <a sec:authorize="hasRole('PHARMACIST')" th:href="@{/my-orders}" th:classappend="${active == 'my'} ? 'on'">Hóa đơn của tôi</a>
+    <!-- Quản trị viên: chỉ quản lý, không bán -->
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/dashboard}" th:classappend="${active == 'dashboard'} ? 'on'">Tổng quan</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/orders}" th:classappend="${active == 'orders'} ? 'on'">Hóa đơn</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/inventory}" th:classappend="${active == 'inventory'} ? 'on'">Kho thuốc</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users}" th:classappend="${active == 'users'} ? 'on'">Dược sĩ<span class="count" th:if="${pendingUsers != null and pendingUsers > 0}" th:text="${pendingUsers}"></span></a>
+  </nav>
+  <div class="who"><span><a th:href="@{/account/password}" title="Đổi mật khẩu" style="text-decoration:none;color:inherit"><b sec:authentication="name"></b></a><small sec:authorize="hasRole('ADMIN')">Quản trị viên</small><small sec:authorize="!hasRole('ADMIN')">Dược sĩ</small></span>
+    <form th:action="@{/logout}" method="post"><button class="btn">Đăng xuất</button></form></div></div>
+</header>
+<ol th:fragment="steps(current)" class="steps no-print staff-only">
+  <li th:classappend="${current == 1} ? 'on' : (${current > 1} ? 'done')">Quét đơn</li>
+  <li th:classappend="${current == 2} ? 'on' : (${current > 2} ? 'done')">Duyệt thuốc</li>
+  <li th:classappend="${current == 3} ? 'on' : (${current > 3} ? 'done')">Báo giá</li>
+  <li th:classappend="${current == 4} ? 'on' : (${current > 4} ? 'done')">Thanh toán</li>
+  <li th:classappend="${current == 5} ? 'on'">Hóa đơn</li>
+</ol>
+</body>
+</html>

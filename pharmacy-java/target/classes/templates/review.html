@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Duyệt thuốc')}"></head>
+<body>
+<header th:replace="~{fragments :: header('pos')}"></header>
+<main>
+  <ol th:replace="~{fragments :: steps(2)}"></ol>
+  <h2>Kiểm tra danh sách thuốc đã đọc</h2>
+  <p class="alert warn" th:if="${mock}">Đang dùng dữ liệu mẫu vì chưa cấu hình khóa API đọc ảnh (GEMINI_API_KEY).</p>
+  <div class="alert error" th:if="${error}" th:text="${error}"></div>
+  <span class="scantime" th:if="${scanSeconds != null}" th:text="'Đọc xong trong ' + ${#numbers.formatDecimal(scanSeconds,1,1,'COMMA')} + ' giây'"></span>
+
+  <form th:action="@{/prescriptions/{id}/review(id=${prescription.id})}" th:object="${form}" method="post">
+    <div class="card" th:each="row, st : *{rows}" th:classappend="${row.needsConfirmation} ? 'flag'">
+      <input type="hidden" th:field="*{rows[__${st.index}__].itemId}">
+      <input type="hidden" th:field="*{rows[__${st.index}__].needsConfirmation}">
+      <input type="hidden" th:field="*{rows[__${st.index}__].ocrNote}">
+      <p class="flagtext" th:if="${row.needsConfirmation}">
+        ⚠ Cần dược sĩ xác nhận<span th:if="${row.ocrNote != null and !row.ocrNote.isEmpty()}" th:text="' — ' + ${row.ocrNote}"></span>
+      </p>
+      <div class="row">
+        <label>Tên trên đơn
+          <input type="text" th:field="*{rows[__${st.index}__].extractedName}"></label>
+        <label class="grow">Thuốc trong kho
+          <select th:field="*{rows[__${st.index}__].medicineId}">
+            <option value="">— Chưa khớp thuốc nào —</option>
+            <option th:each="m : ${medicines}" th:value="${m.id}" th:text="${m.displayName + ' (' + m.unit + ')'}"></option>
+          </select></label>
+        <label class="qty">Số lượng
+          <input type="number" min="1" th:field="*{rows[__${st.index}__].quantity}"></label>
+        <label class="inline">
+          <input type="checkbox" th:field="*{rows[__${st.index}__].remove}"> Xóa dòng</label>
+      </div>
+      <label class="grow" style="display:flex;flex-direction:column;font-size:12px;font-weight:600;color:var(--muted);gap:4px;margin-top:10px">Liều lượng và cách dùng (sẽ in lên hóa đơn)
+        <textarea rows="2" th:field="*{rows[__${st.index}__].usage}" placeholder="vd: Sáng 1 viên, tối 1 viên, sau ăn, 5 ngày"></textarea></label>
+      <label class="inline" th:if="${row.needsConfirmation}">
+        <input type="checkbox" th:field="*{rows[__${st.index}__].confirmed}"> Tôi đã kiểm tra dòng thuốc này</label>
+    </div>
+    <div class="actions">
+      <a class="btn" th:href="@{/}">← Quét lại</a>
+      <button type="submit" class="btn primary right">Kiểm kho và báo giá</button>
+    </div>
+  </form>
+</main>
+</body>
+</html>

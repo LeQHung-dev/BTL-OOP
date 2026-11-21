@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Báo giá')}"></head>
+<body data-share>
+<header th:replace="~{fragments :: header('pos')}"></header>
+<main>
+  <ol th:replace="~{fragments :: steps(3)}"></ol>
+  <div class="sharehead share-only"><b>Nhà thuốc PharmaScan</b><span>Đơn thuốc và báo giá của quý khách</span></div>
+  <h2 class="staff-only">Báo giá theo tồn kho</h2>
+  <div class="alert error" th:if="${error}" th:text="${error}"></div>
+  <div class="tablewrap"><table class="items">
+    <thead><tr><th>Thuốc, liều lượng và cách dùng</th><th>Tình trạng</th><th class="r">Cần</th><th class="r">Bán được</th><th class="r">Đơn giá</th><th class="r">Thành tiền</th></tr></thead>
+    <tbody>
+      <tr th:each="l : ${quote.lines}">
+        <td><span class="med" th:text="${l.name != null ? l.name : l.extractedName}"></span>
+          <small class="usage" th:if="${l.usage != null and !l.usage.isEmpty()}" th:text="'Cách dùng: ' + ${l.usage}"></small>
+          <small class="staff-only" th:if="${l.name == null}">Chưa có trong danh mục</small></td>
+        <td><span class="badge" th:classappend="${l.status.name().toLowerCase()}" th:text="${l.status.label}"></span>
+            <small class="staff-only" th:if="${l.status.name() == 'PARTIAL'}" th:text="'Tồn ' + ${l.stock}"></small></td>
+        <td class="r" th:text="${l.requested} + ' ' + ${l.unit}"></td>
+        <td class="r" th:text="${l.actualQuantity} + ' ' + ${l.unit}"></td>
+        <td class="r" th:text="${#numbers.formatInteger(l.unitPrice,1,'POINT')} + 'đ'"></td>
+        <td class="r"><b th:text="${#numbers.formatInteger(l.subtotal,1,'POINT')} + 'đ'"></b></td>
+      </tr>
+    </tbody>
+    <tfoot><tr><td colspan="5" class="r"><b>Tổng cộng</b></td>
+      <td class="r total" th:text="${#numbers.formatInteger(quote.total,1,'POINT')} + 'đ'"></td></tr></tfoot>
+  </table></div>
+  <p class="alert error" th:if="${!quote.sellable}">Không có thuốc nào còn hàng để bán.</p>
+  <div class="actions">
+    <a class="btn staff-only" th:href="@{/prescriptions/{id}/review(id=${prescription.id})}">← Sửa đơn</a>
+    <a class="btn primary right" th:if="${quote.sellable}" th:href="@{/prescriptions/{id}/payment(id=${prescription.id})}">Chuyển sang thanh toán</a>
+  </div>
+</main>
+</body>
+</html>

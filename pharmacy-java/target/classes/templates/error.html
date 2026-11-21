@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Có lỗi')}"></head>
+<body>
+<div class="errbox card">
+  <div class="code" th:text="${status != null ? status : 'Lỗi'}">404</div>
+  <h2 th:if="${status == 403}">Bạn không có quyền vào trang này</h2>
+  <h2 th:if="${status == 404}">Không tìm thấy trang</h2>
+  <h2 th:unless="${status == 403 or status == 404}">Đã có lỗi xảy ra</h2>
+  <p class="muted" th:if="${status == 403}">Quản trị viên chỉ quản lý (tổng quan, hóa đơn, kho thuốc, dược sĩ). Việc bán thuốc do dược sĩ thực hiện.</p>
+  <p class="actions" style="justify-content:center"><a class="btn primary" th:href="@{/}">Về trang chủ</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Hóa đơn')}"></head>
+<body data-share>
+<header th:replace="~{fragments :: header(${isAdmin} ? 'orders' : 'pos')}"></header>
+<main>
+  <th:block th:unless="${isAdmin}"><ol th:replace="~{fragments :: steps(5)}"></ol></th:block>
+  <p class="no-print" th:if="${isAdmin}"><a class="btn" th:href="@{/orders}">← Về danh sách hóa đơn</a></p>
+  <div class="card receipt">
+    <div class="rhead"><div><b>Nhà thuốc PharmaScan</b><small>Hóa đơn bán thuốc</small></div><span class="paid">ĐÃ THANH TOÁN</span></div>
+    <dl class="meta">
+      <div><dt>Mã hóa đơn</dt><dd th:text="'#' + ${order.id}"></dd></div>
+      <div><dt>Thời gian</dt><dd th:text="${order.createdAtText}"></dd></div>
+      <div><dt>Thanh toán</dt><dd th:text="${order.paymentMethod.label}"></dd></div>
+      <div th:if="${order.staffName}"><dt>Dược sĩ bán</dt><dd th:text="${order.staffName}"></dd></div>
+    </dl>
+    <table class="items">
+      <thead><tr><th>Thuốc, liều lượng và cách dùng</th><th class="r">SL × Đơn giá</th><th class="r">Thành tiền</th></tr></thead>
+      <tbody>
+        <tr th:each="i : ${order.items}">
+          <td>
+            <span class="med" th:text="${i.medicine.name}"></span>
+            <small th:if="${i.medicine.dosage != null and !i.medicine.dosage.isEmpty()}" th:text="'Hàm lượng: ' + ${i.medicine.dosage}"></small>
+            <small class="usage" th:if="${i.usage != null}" th:text="'Cách dùng: ' + ${i.usage}"></small>
+            <small class="usage empty" th:if="${i.usage == null}">Dùng theo chỉ dẫn của dược sĩ</small>
+          </td>
+          <td class="r" th:text="${i.quantity} + ' ' + ${i.medicine.unit} + ' × ' + ${#numbers.formatInteger(i.unitPrice,1,'POINT')} + 'đ'"></td>
+          <td class="r"><b th:text="${#numbers.formatInteger(i.subtotal,1,'POINT')} + 'đ'"></b></td>
+        </tr>
+      </tbody>
+      <tfoot><tr><td colspan="2" class="r"><b>Tổng cộng</b></td>
+        <td class="r total" th:text="${#numbers.formatInteger(order.totalAmount,1,'POINT')} + 'đ'"></td></tr></tfoot>
+    </table>
+    <p class="note">Dùng thuốc đúng liều, đúng cách như hướng dẫn trên hóa đơn. Hỏi dược sĩ hoặc bác sĩ nếu có bất kỳ thắc mắc hay dấu hiệu bất thường.</p>
+    <p class="muted foot">Cảm ơn quý khách.</p>
+  </div>
+  <div class="actions no-print staff-only">
+    <button class="btn" onclick="window.print()">In hóa đơn</button>
+    <a class="btn primary" th:unless="${isAdmin}" th:href="@{/}">Quét đơn mới</a>
+  </div>
+</main>
+</body>
+</html>

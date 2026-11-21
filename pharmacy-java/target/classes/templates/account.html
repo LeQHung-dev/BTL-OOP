@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Đổi mật khẩu')}"></head>
+<body>
+<header th:replace="~{fragments :: header('account')}"></header>
+<main style="max-width:460px">
+  <h2>Đổi mật khẩu</h2>
+  <p class="alert warn" th:if="${msg}" th:text="${msg}"></p>
+  <p class="alert error" th:if="${err}" th:text="${err}"></p>
+  <form th:action="@{/account/password}" method="post" class="stack card">
+    <label>Mật khẩu hiện tại<input type="password" name="current" required></label>
+    <label>Mật khẩu mới (tối thiểu 8 ký tự, có chữ và số)<input type="password" name="password" minlength="8" required></label>
+    <label>Nhập lại mật khẩu mới<input type="password" name="confirm" minlength="8" required></label>
+    <button class="btn primary">Đổi mật khẩu</button>
+  </form>
+</main>
+</body>
+</html>

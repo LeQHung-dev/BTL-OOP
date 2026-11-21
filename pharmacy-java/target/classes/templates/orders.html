@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Hóa đơn')}"></head>
+<body>
+<header th:replace="~{fragments :: header('orders')}"></header>
+<main>
+  <h2 th:text="'Hóa đơn (' + ${#lists.size(orders)} + ')'"></h2>
+  <div class="card" th:if="${#lists.isEmpty(orders)}"><p class="muted">Chưa có hóa đơn nào. Hóa đơn xuất hiện khi dược sĩ bán thuốc.</p></div>
+  <th:block th:unless="${#lists.isEmpty(orders)}">
+    <div class="toolbar no-print"><input type="search" class="search" id="q" placeholder="Tìm theo mã, dược sĩ, ngày…"></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Mã</th><th>Thời gian</th><th>Dược sĩ bán</th><th>Thanh toán</th><th class="r">Số loại thuốc</th><th class="r">Tổng tiền</th><th></th></tr></thead>
+      <tbody><tr th:each="o : ${orders}">
+        <td><b th:text="'#' + ${o.id}"></b></td><td th:text="${o.createdAtText}"></td>
+        <td th:text="${o.staffName != null ? o.staffName : '—'}"></td>
+        <td><span class="badge available" th:text="${o.paymentMethod.label}"></span></td>
+        <td class="r" th:text="${#lists.size(o.items)}"></td>
+        <td class="r"><b th:text="${#numbers.formatInteger(o.totalAmount,1,'POINT')} + 'đ'"></b></td>
+        <td class="r"><a class="btn" th:href="@{/orders/{id}(id=${o.id})}">Xem</a></td></tr></tbody>
+    </table></div>
+  </th:block>
+</main>
+<script>
+  const q = document.getElementById('q');
+  if (q) q.addEventListener('input', e => {
+    const k = e.target.value.toLowerCase();
+    document.querySelectorAll('tbody tr').forEach(r => r.hidden = !r.textContent.toLowerCase().includes(k));
+  });
+</script>
+</body>
+</html>

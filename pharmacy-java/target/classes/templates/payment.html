@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Thanh toán')}"></head>
+<body data-share>
+<header th:replace="~{fragments :: header('pos')}"></header>
+<main>
+  <ol th:replace="~{fragments :: steps(4)}"></ol>
+  <div class="sharehead share-only"><b>Nhà thuốc PharmaScan</b><span>Thanh toán đơn thuốc</span></div>
+  <h2 class="staff-only">Thanh toán</h2>
+  <div class="alert error" th:if="${error}" th:text="${error}"></div>
+  <div class="pay">
+    <div class="qrcard"><img class="qr" th:src="${qrUrl}" alt="Mã VietQR thanh toán"><p>Quét bằng app ngân hàng</p></div>
+    <div>
+      <p class="muted">Số tiền cần thanh toán</p>
+      <p class="bigtotal" th:text="${#numbers.formatInteger(total,1,'POINT')} + 'đ'"></p>
+      <p class="muted share-only">Quý khách quét mã QR bằng ứng dụng ngân hàng để chuyển khoản, hoặc thanh toán tiền mặt tại quầy.</p>
+      <p class="muted staff-only">Bệnh nhân quét mã QR để chuyển khoản. Chỉ bấm xác nhận khi đã thấy tiền về tài khoản. Khi bật "Chia sẻ màn hình với khách", các nút xác nhận được ẩn để khách không bấm nhầm; bấm "Thoát chế độ khách" để hiện lại.</p>
+      <form th:action="@{/prescriptions/{id}/pay(id=${prescription.id})}" method="post" class="actions staff-only">
+        <button name="method" value="VIETQR" class="btn primary lg">Đã nhận chuyển khoản</button>
+        <button name="method" value="CASH" class="btn lg">Thu tiền mặt</button>
+      </form>
+    </div>
+  </div>
+  <div class="actions staff-only"><a class="btn" th:href="@{/prescriptions/{id}/quote(id=${prescription.id})}">← Xem lại báo giá</a></div>
+</main>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Đăng ký')}"></head>
+<body class="authpage">
+<div class="auth card">
+  <div class="brand" style="margin-bottom:18px"><span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></span><span>PharmaScan<small>Nhà thuốc thông minh</small></span></div>
+  <p class="alert error" th:if="${err}" th:text="${err}"></p>
+  <h2>Đăng ký nhân viên</h2>
+  <div th:if="${!open}">
+    <p class="alert warn">Nhà thuốc đang tạm đóng đăng ký tài khoản mới. Vui lòng liên hệ quản trị viên để được cấp tài khoản.</p>
+    <p class="muted"><a th:href="@{/login}">Quay lại đăng nhập</a></p>
+  </div>
+  <div th:if="${open}">
+    <form th:action="@{/register}" method="post" class="stack">
+      <label>Mã mời (xin từ quản trị viên)<input type="text" name="inviteCode" placeholder="XXXX-XXXX" autocomplete="off" required></label>
+      <label>Họ và tên<input type="text" name="fullName" th:value="${prev != null ? prev['fullName'] : ''}" required></label>
+      <label>Số điện thoại<input type="tel" name="phone" th:value="${prev != null ? prev['phone'] : ''}" required></label>
+      <label>Số chứng chỉ hành nghề dược (nếu là dược sĩ)<input type="text" name="licenseNo" th:value="${prev != null ? prev['licenseNo'] : ''}"></label>
+      <label>Tên đăng nhập<input type="text" name="username" placeholder="vd: nguyenvana" th:value="${prev != null ? prev['username'] : ''}" required></label>
+      <label>Mật khẩu (tối thiểu 8 ký tự, có chữ và số)<input type="password" name="password" minlength="8" required></label>
+      <label>Nhập lại mật khẩu<input type="password" name="confirm" minlength="8" required></label>
+      <button class="btn primary lg" style="width:100%;justify-content:center">Gửi đăng ký</button>
+    </form>
+    <p class="muted" style="margin-top:14px">Tài khoản mới ở vai trò Dược sĩ và cần quản trị viên duyệt. <a th:href="@{/login}">Quay lại đăng nhập</a></p>
+  </div>
+</div>
+</body>
+</html>

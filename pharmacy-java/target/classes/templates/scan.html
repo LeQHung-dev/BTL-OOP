@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Quét đơn')}"></head>
+<body>
+<header th:replace="~{fragments :: header('pos')}"></header>
+<main>
+  <ol th:replace="~{fragments :: steps(1)}"></ol>
+  <div class="alert error" th:if="${error}" th:text="${error}"></div>
+  <p class="alert warn" th:if="${mock}">Chưa cấu hình GEMINI_API_KEY nên web dùng dữ liệu đơn thuốc mẫu.</p>
+
+  <div class="hero">
+    <div>
+      <h1>Quét đơn thuốc, có báo giá ngay</h1>
+      <p class="lead">Chụp hoặc tải ảnh đơn thuốc. Hệ thống đọc danh sách thuốc, kiểm tra tồn kho và tính tiền cho bạn.</p>
+      <ul class="points">
+        <li><i>✓</i><span>Tự nhận diện tên thuốc và số lượng trên đơn</span></li>
+        <li><i>✓</i><span>Báo thuốc còn đủ, thiếu hoặc hết hàng</span></li>
+        <li><i>✓</i><span>Thanh toán bằng mã QR hoặc tiền mặt</span></li>
+      </ul>
+    </div>
+    <form th:action="@{/scan}" method="post" enctype="multipart/form-data" id="scanForm">
+      <div class="viewer" id="drop">
+        <video id="video" autoplay playsinline muted hidden></video>
+        <img id="preview" alt="Ảnh đơn thuốc" hidden>
+        <div id="hint"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0A6B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
+          <b>Kéo thả ảnh đơn thuốc vào đây</b><p>Hoặc chọn ảnh, hoặc mở camera. Đặt đơn trên mặt phẳng, đủ sáng.</p></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" id="camBtn">Mở camera</button>
+        <button type="button" class="btn primary" id="snapBtn" hidden>Chụp ảnh</button>
+        <label class="btn">Chọn ảnh
+          <input type="file" name="image" id="image" accept="image/*" hidden>
+        </label>
+        <button type="submit" class="btn primary lg right" id="submitBtn" disabled>Đọc đơn thuốc</button>
+      </div>
+    </form>
+  </div>
+</main>
+<div class="busy" id="busy" hidden><div><div class="spin"></div><b>Đang đọc đơn thuốc…</b><p id="busyText">Đã chờ 0 giây</p></div></div>
+<script>
+  const fileInput = document.getElementById('image'), preview = document.getElementById('preview'),
+        video = document.getElementById('video'), snapBtn = document.getElementById('snapBtn'),
+        submitBtn = document.getElementById('submitBtn'), hint = document.getElementById('hint');
+  let stream = null;
+  function showFile(f) {
+    preview.src = URL.createObjectURL(f); preview.hidden = false; video.hidden = true;
+    hint.hidden = true; submitBtn.disabled = false;
+  }
+  // Thu nhỏ ảnh ngay trên trình duyệt: upload nhanh hơn và tự xoay đúng chiều ảnh chụp từ điện thoại (EXIF).
+  const MAX_SIDE = 1600;
+  async function shrink(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); img.src = url; await img.decode();
+      const w0 = img.naturalWidth, h0 = img.naturalHeight, k = Math.min(1, MAX_SIDE / Math.max(w0, h0));
+      const c = document.createElement('canvas'); c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+      return blob ? new File([blob], 'don-thuoc.jpg', { type: 'image/jpeg' }) : file;
+    } catch (e) { return file; }   // định dạng trình duyệt không đọc được (vd HEIC): gửi nguyên bản
+    finally { URL.revokeObjectURL(url); }
+  }
+  async function useFile(f) {
+    submitBtn.disabled = true;
+    const g = await shrink(f);
+    const dt = new DataTransfer(); dt.items.add(g); fileInput.files = dt.files;
+    showFile(g);
+  }
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) useFile(fileInput.files[0]); });
+  document.getElementById('camBtn').onclick = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream; video.hidden = false; preview.hidden = true; hint.hidden = true; snapBtn.hidden = false;
+    } catch (e) { alert('Không mở được camera. Hãy cho phép truy cập camera hoặc dùng nút Tải ảnh lên.'); }
+  };
+  snapBtn.onclick = () => {
+    const c = document.createElement('canvas');
+    c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    c.toBlob(b => {
+      const f = new File([b], 'don-thuoc.jpg', { type: 'image/jpeg' });
+      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      stream.getTracks().forEach(t => t.stop()); snapBtn.hidden = true; showFile(f);
+    }, 'image/jpeg', 0.9);
+  };
+  const drop=document.getElementById('drop');
+  ['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('drag');}));
+  ['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('drag');}));
+  drop.addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){useFile(f);}});
+  document.getElementById('scanForm').addEventListener('submit', () => {
+    submitBtn.disabled = true; submitBtn.textContent = 'Đang đọc đơn…';
+    const busy = document.getElementById('busy'), txt = document.getElementById('busyText'), t0 = Date.now();
+    const tips = ['Đang gửi ảnh tới AI…', 'AI đang đọc tên thuốc và số lượng…', 'Đang đối chiếu với kho thuốc…'];
+    busy.hidden = false;
+    setInterval(() => {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      txt.textContent = tips[Math.min(2, Math.floor(s / 3))] + ' (' + s + ' giây)';
+    }, 500);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Hóa đơn của tôi')}"></head>
+<body>
+<header th:replace="~{fragments :: header('my')}"></header>
+<main>
+  <h2>Hóa đơn của tôi <small class="muted" style="font-size:14px">(50 hóa đơn gần nhất)</small></h2>
+  <div class="card" th:if="${#lists.isEmpty(orders)}"><p class="muted">Bạn chưa bán đơn nào. <a th:href="@{/}">Quét đơn thuốc đầu tiên</a>.</p></div>
+  <div class="tablewrap" th:unless="${#lists.isEmpty(orders)}"><table>
+    <thead><tr><th>Mã</th><th>Thời gian</th><th>Thanh toán</th><th class="r">Số loại thuốc</th><th class="r">Tổng tiền</th><th></th></tr></thead>
+    <tbody><tr th:each="o : ${orders}">
+      <td><b th:text="'#' + ${o.id}"></b></td><td th:text="${o.createdAtText}"></td>
+      <td><span class="badge available" th:text="${o.paymentMethod.label}"></span></td>
+      <td class="r" th:text="${#lists.size(o.items)}"></td>
+      <td class="r"><b th:text="${#numbers.formatInteger(o.totalAmount,1,'POINT')} + 'đ'"></b></td>
+      <td class="r"><a class="btn" th:href="@{/orders/{id}(id=${o.id})}">Xem / in lại</a></td></tr></tbody>
+  </table></div>
+</main>
+</body>
+</html>

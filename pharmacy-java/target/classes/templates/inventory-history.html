@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Lịch sử kho')}"></head>
+<body>
+<header th:replace="~{fragments :: header('inventory')}"></header>
+<main>
+  <p><a class="btn" th:href="@{/inventory}">← Về kho thuốc</a></p>
+  <h2 th:text="'Lịch sử tồn kho: ' + ${medicine.displayName}"></h2>
+  <p class="muted" th:text="'Hiện còn ' + ${medicine.stockQuantity} + ' ' + ${medicine.unit} + ' (hiển thị tối đa 100 lần thay đổi gần nhất)'"></p>
+  <div class="card" th:if="${#lists.isEmpty(logs)}"><p class="muted">Chưa có biến động nào.</p></div>
+  <div class="tablewrap" th:unless="${#lists.isEmpty(logs)}"><table>
+    <thead><tr><th>Thời gian</th><th class="r">Thay đổi</th><th class="r">Tồn sau đó</th><th>Lý do</th><th></th></tr></thead>
+    <tbody><tr th:each="l : ${logs}">
+      <td th:text="${l.createdAtText}"></td>
+      <td class="r"><span th:class="${l.changeAmount > 0} ? 'logup' : 'logdown'"
+          th:text="${l.changeAmount > 0} ? '▲ +' + ${l.changeAmount} : '▼ −' + ${-l.changeAmount}"></span></td>
+      <td class="r" th:text="${l.remainingStock}"></td>
+      <td th:text="${l.reason}"></td>
+      <td class="r"><a class="btn" th:if="${l.order != null}" th:href="@{/orders/{id}(id=${l.order.id})}" th:text="'HĐ #' + ${l.order.id}"></a></td>
+    </tr></tbody>
+  </table></div>
+</main>
+</body>
+</html>

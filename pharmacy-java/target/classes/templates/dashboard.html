@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Tổng quan')}"></head>
+<body>
+<header th:replace="~{fragments :: header('dashboard')}"></header>
+<main>
+  <h2>Tổng quan hôm nay</h2>
+  <div class="stats">
+    <div class="card stat"><span>Doanh thu hôm nay</span><b th:text="${#numbers.formatInteger(s.todayRevenue,1,'POINT')} + 'đ'"></b></div>
+    <div class="card stat"><span>Đơn đã bán hôm nay</span><b th:text="${s.todayOrders}"></b></div>
+    <div class="card stat"><span>Tổng doanh thu</span><b th:text="${#numbers.formatInteger(s.totalRevenue,1,'POINT')} + 'đ'"></b></div>
+    <div class="card stat" th:classappend="${#lists.size(s.lowStock) > 0} ? 'warn'"><span>Thuốc sắp hết</span><b th:text="${#lists.size(s.lowStock)}"></b></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Doanh thu 7 ngày qua</h3>
+      <div class="chart"><div class="col" th:each="d : ${s.week}" th:title="${#numbers.formatInteger(d.amount,1,'POINT')} + 'đ'">
+        <div class="bartop"><i th:style="'height:' + ${d.percent} + '%'"></i></div><small th:text="${d.label}"></small></div></div>
+      <p class="muted" th:if="${s.totalOrders == 0}">Chưa có đơn nào. Hãy bán đơn đầu tiên để thấy biểu đồ.</p></div>
+    <div class="card"><h3>Thuốc bán chạy</h3>
+      <p class="muted" th:if="${#lists.isEmpty(s.top)}">Chưa có dữ liệu bán hàng.</p>
+      <div class="hrow" th:each="t : ${s.top}"><div><span th:text="${t.name}"></span><small th:text="${t.quantity} + ' đã bán'"></small>
+        <div class="bar"><i th:style="'width:' + ${t.percent} + '%'"></i></div></div></div></div>
+  </div>
+  <div class="card"><h3>Dược sĩ bán hôm nay</h3>
+    <p class="muted" th:if="${#lists.isEmpty(s.staffToday)}">Hôm nay chưa có hóa đơn nào.</p>
+    <div class="tablewrap" th:unless="${#lists.isEmpty(s.staffToday)}"><table><tbody>
+      <tr th:each="t : ${s.staffToday}"><td><b th:text="${t.name}"></b></td><td class="r" th:text="${t.orders} + ' hóa đơn'"></td>
+        <td class="r"><b th:text="${#numbers.formatInteger(t.amount,1,'POINT')} + 'đ'"></b></td></tr>
+    </tbody></table></div></div>
+  <div class="card"><h3>Cần nhập thêm <a class="btn" style="float:right;padding:4px 12px" th:href="@{/inventory}">Mở kho thuốc</a></h3>
+    <p class="muted" th:if="${#lists.isEmpty(s.lowStock)}">Tất cả thuốc đều còn đủ hàng.</p>
+    <div class="tablewrap" th:unless="${#lists.isEmpty(s.lowStock)}"><table><tbody>
+      <tr th:each="m : ${s.lowStock}"><td th:text="${m.displayName}"></td>
+        <td class="r"><span class="badge" th:classappend="${m.stockQuantity == 0} ? 'out_of_stock' : 'partial'"
+          th:text="${m.stockQuantity == 0} ? 'Hết hàng' : 'Còn ' + ${m.stockQuantity} + ' ' + ${m.unit}"></span></td></tr>
+    </tbody></table></div></div>
+</main>
+</body>
+</html>

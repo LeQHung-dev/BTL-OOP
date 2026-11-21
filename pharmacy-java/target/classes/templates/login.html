@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Đăng nhập')}"></head>
+<body class="authpage">
+<div class="auth card">
+  <div class="brand" style="margin-bottom:18px"><span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></span><span>PharmaScan<small>Nhà thuốc thông minh</small></span></div>
+  <p class="alert warn" th:if="${msg}" th:text="${msg}"></p>
+  <p class="alert error" th:if="${err}" th:text="${err}"></p>
+  <p class="alert error" th:if="${param.error}">Không đăng nhập được: sai tên hoặc mật khẩu, tài khoản chưa được duyệt/đã bị khóa, hoặc bị tạm khóa 5 phút do nhập sai 5 lần.</p>
+  <p class="alert warn" th:if="${param.logout}">Bạn đã đăng xuất.</p>
+  <h2>Đăng nhập</h2>
+  <form th:action="@{/login}" method="post" class="stack">
+    <label>Tên đăng nhập<input type="text" name="username" autofocus required></label>
+    <label>Mật khẩu<input type="password" name="password" required></label>
+    <button class="btn primary lg" style="width:100%;justify-content:center">Đăng nhập</button>
+  </form>
+  <p class="muted" style="margin-top:14px">Chưa có tài khoản? <a th:href="@{/register}">Đăng ký nhân viên</a></p>
+</div>
+</body>
+</html>

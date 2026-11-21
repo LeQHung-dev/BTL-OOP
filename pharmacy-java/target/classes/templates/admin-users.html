@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments :: head('Nhân sự')}"></head>
+<body>
+<header th:replace="~{fragments :: header('users')}"></header>
+<main>
+  <h2>Dược sĩ và tài khoản</h2>
+  <p class="alert warn" th:if="${msg}" th:text="${msg}"></p>
+  <p class="alert error" th:if="${err}" th:text="${err}"></p>
+
+  <div class="card">
+    <h3>Đăng ký nhân viên</h3>
+    <p class="muted">Người ngoài chỉ đăng ký được khi bạn đang mở đăng ký VÀ họ có mã mời. Đăng ký xong vẫn phải chờ bạn duyệt.</p>
+    <div class="row" style="align-items:center">
+      <span class="badge" th:classappend="${registrationOpen} ? 'available' : 'out_of_stock'" th:text="${registrationOpen} ? 'Đang mở đăng ký' : 'Đã đóng đăng ký'"></span>
+      <span class="codebox" th:text="${inviteCode}"></span>
+      <form th:action="@{/admin/users/registration/code}" method="post"><button class="btn" onclick="return confirm('Tạo mã mới? Mã cũ sẽ không dùng được nữa.')">Tạo mã mới</button></form>
+      <form th:action="@{/admin/users/registration/toggle}" method="post">
+        <input type="hidden" name="open" th:value="${!registrationOpen}">
+        <button class="btn" th:text="${registrationOpen} ? 'Đóng đăng ký' : 'Mở đăng ký'"></button></form>
+    </div>
+  </div>
+
+  <details class="card no-print"><summary>+ Tạo tài khoản trực tiếp (kích hoạt ngay)</summary>
+    <form th:action="@{/admin/users/create}" method="post" class="row" style="margin-top:14px">
+      <label class="grow">Họ tên<input type="text" name="fullName" required></label>
+      <label class="grow">Tên đăng nhập<input type="text" name="username" required></label>
+      <label class="grow">Số điện thoại<input type="tel" name="phone" required></label>
+      <label class="grow">Số CCHN dược<input type="text" name="licenseNo"></label>
+      <label class="grow">Mật khẩu tạm<input type="password" name="password" minlength="8" required></label>
+      <label>Vai trò<select name="role"><option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}" th:selected="${r.name() == 'PHARMACIST'}"></option></select></label>
+      <button class="btn primary">Tạo</button>
+    </form></details>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Tài khoản</th><th>Liên hệ / CCHN</th><th>Vai trò</th><th class="r">Đã bán</th><th>Trạng thái</th><th class="r">Thao tác</th></tr></thead>
+    <tbody><tr th:each="u : ${users}">
+      <td><b th:text="${u.username}"></b><small th:text="${u.fullName}"></small><small th:if="${u.createdAtText != ''}" th:text="'Đăng ký ' + ${u.createdAtText}"></small></td>
+      <td><span th:text="${u.phone != null ? u.phone : '—'}"></span><small th:text="${u.licenseNo != null ? 'CCHN: ' + u.licenseNo : 'Chưa có CCHN'}"></small></td>
+      <td><form th:action="@{/admin/users/{id}/role(id=${u.id})}" method="post" class="row" style="flex-wrap:nowrap">
+        <select name="role" style="width:auto" th:disabled="${u.username == me}"><option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}" th:selected="${r == u.role}"></option></select>
+        <button class="btn" th:disabled="${u.username == me}">Lưu</button></form></td>
+      <td class="r"><span th:text="${sales[u.username] != null ? sales[u.username].orders : 0} + ' hóa đơn'"></span>
+        <small th:text="${#numbers.formatInteger(sales[u.username] != null ? sales[u.username].revenue : 0,1,'POINT')} + 'đ'"></small></td>
+      <td><span class="badge" th:classappend="${u.enabled} ? 'available' : (${u.pending} ? 'partial' : 'out_of_stock')"
+            th:text="${u.enabled} ? 'Đang hoạt động' : (${u.pending} ? 'Chờ duyệt' : 'Đã khóa')"></span></td>
+      <td><div class="actions-cell">
+        <form th:action="@{/admin/users/{id}/enabled(id=${u.id})}" method="post">
+          <input type="hidden" name="enabled" th:value="${!u.enabled}">
+          <button class="btn" th:classappend="${!u.enabled} ? 'primary'" th:disabled="${u.username == me}"
+                  th:text="${u.enabled} ? 'Khóa' : (${u.pending} ? 'Duyệt' : 'Mở khóa')"></button></form>
+        <form th:if="${!u.enabled}" th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="post" onsubmit="return confirm('Xóa hẳn tài khoản này?')">
+          <button class="btn" th:text="${u.pending} ? 'Từ chối' : 'Xóa'"></button></form>
+        <form th:action="@{/admin/users/{id}/password(id=${u.id})}" method="post" class="userform" onsubmit="return confirm('Đặt lại mật khẩu cho tài khoản này?')">
+          <input type="password" name="password" minlength="8" placeholder="Mật khẩu mới" required>
+          <button class="btn">Đặt lại</button></form>
+      </div></td>
+    </tr></tbody>
+  </table></div>
+</main>
+</body>
+</html>
